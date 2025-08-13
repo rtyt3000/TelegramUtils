@@ -1,0 +1,4 @@
+name: TelegramUtils
+version: '1.0-SNAPSHOT'
+main: in.ppsh.goidaworld.telegramUtils.TelegramUtils
+api-version: '1.21'
