@@ -15,7 +15,6 @@ import org.bukkit.Bukkit;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,9 +30,16 @@ public class BotManager {
         bot = new BotClient(token);
         this.username = username;
 
-        bot.onMessage(filter -> filter.regex("^/start\\s+([0-9a-fA-F\\-]{36})$"), (context, message) -> {
-            UUID uuid = UUID.fromString(message.text.split("\\s+")[1]);
-            AuthUser authUser = databaseManager.getAuthUser(uuid);
+        bot.onMessage(filter -> filter.regex("^/start\\s+(\\d+)$"), (context, message) -> {
+            long loginId = Long.parseLong(message.text.split("\\s+")[1]);
+            Login login = null;
+            try {
+                login = databaseManager.getLoginDao().queryForId(loginId);
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "Error search login", e);
+            }
+
+            AuthUser authUser = login.getUser();
 
             if (authUser == null || authUser.getTelegramId() != 0) {
                 context.sendMessage(message.chat.id, langConfig.getConfig().getString("bot.failed")).exec();
@@ -43,6 +49,8 @@ public class BotManager {
             authUser.setTelegramId(message.from.id);
             try {
                 databaseManager.getAuthDao().update(authUser);
+                login.setStatus(LogInStatus.ACCEPTED);
+                databaseManager.getLoginDao().update(login);
             } catch (SQLException e) {
                 logger.log(Level.WARNING, "Error updating auth user", e);
             }
@@ -110,5 +118,9 @@ public class BotManager {
                 new InlineKeyboardButton(langConfig.getConfig().getString("bot.deny_button", "Нет"), "reject:" + loginId)
         );
         bot.context.sendMessage(telegramId, message).replyMarkup(inlineMarkup).parseMode(ParseMode.HTML).exec();
+    }
+
+    public void sendBanAsk(long loginId) {
+        // TODO: Implement this method to send a ban request to the user
     }
 }

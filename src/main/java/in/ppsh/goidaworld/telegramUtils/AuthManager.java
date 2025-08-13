@@ -50,14 +50,17 @@ public class AuthManager {
 
         if (user.getTelegramId() == 0) {
             freezePlayer(player.getUniqueId());
-            sendRegisterInstructions(player);
+            sendRegisterInstructions(player, login.getId());
             return;
         }
 
         if (!hasAcceptedLogin(ip, user)) {
             freezePlayer(player.getUniqueId());
             sendLoginRequest(user, player, ip, login.getId());
+            return;
         }
+
+        botManager.sendBanAsk(login.getId());
     }
 
     public boolean hasAcceptedLogin(String ip, AuthUser user) throws SQLException {
@@ -75,8 +78,9 @@ public class AuthManager {
         freezePlayer(player.getUniqueId());
         AuthUser user = new AuthUser(player.getUniqueId());
         databaseManager.getAuthDao().create(user);
-        databaseManager.getLoginDao().create(new Login(ip, user));
-        sendRegisterInstructions(player);
+        Login login = new Login(ip, user);
+        databaseManager.getLoginDao().create(login);
+        sendRegisterInstructions(player, login.getId());
 
     }
 
@@ -94,12 +98,12 @@ public class AuthManager {
         return frozenPlayers.contains(uuid);
     }
 
-    private void sendRegisterInstructions(Player player) {
+    private void sendRegisterInstructions(Player player, long loginId) {
         String botUsername = botManager.username;
 
         player.sendRichMessage(langConfig.getConfig().getString("minecraft.auth", "auth_required"));
         player.sendRichMessage(langConfig.getConfig().getString("minecraft.auth_click", "auth_instructions")
-                .replace("{url}", "https://t.me/" + botUsername + "?start=" + player.getUniqueId()));
+                .replace("{url}", "https://t.me/" + botUsername + "?start=" + loginId));
     }
 
     private void sendLoginRequest(AuthUser user, Player player, String ip, long loginId) {
@@ -109,4 +113,5 @@ public class AuthManager {
         botManager.sendRequest(user.getTelegramId(), ip, player.getName(), loginId);
 
     }
+
 }
