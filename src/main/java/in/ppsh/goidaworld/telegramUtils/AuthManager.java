@@ -6,7 +6,7 @@ import in.ppsh.goidaworld.telegramUtils.database.LogInStatus;
 import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
-import org.bukkit.Bukkit;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -54,12 +54,21 @@ public class AuthManager {
             return;
         }
 
+        if (hasBannedLogin(ip, user)) {
+            login.setStatus(LogInStatus.BANNED);
+            databaseManager.getLoginDao().update(login);
+            player.kick(MiniMessage.miniMessage().deserialize(langConfig.getConfig().getString("minecraft.auth_denied_kick", "You are banned from using this server.")));
+            return;
+        }
+
         if (!hasAcceptedLogin(ip, user)) {
             freezePlayer(player.getUniqueId());
             sendLoginRequest(user, player, ip, login.getId());
             return;
         }
 
+        login.setStatus(LogInStatus.ACCEPTED);
+        databaseManager.getLoginDao().update(login);
         botManager.sendBanAsk(login.getId());
     }
 
@@ -67,6 +76,12 @@ public class AuthManager {
         return databaseManager.getLoginDao().queryBuilder()
                 .where().eq("ip", ip).and().eq("uuid", user.getUuid())
                 .and().eq("status", LogInStatus.ACCEPTED).countOf() > 0;
+    }
+
+    public boolean hasBannedLogin(String ip, AuthUser user) throws SQLException {
+        return databaseManager.getLoginDao().queryBuilder()
+                .where().eq("ip", ip).and().eq("uuid", user.getUuid())
+                .and().eq("status", LogInStatus.BANNED).countOf() > 0;
     }
 
     public boolean isAuthorized(Player player) throws SQLException {

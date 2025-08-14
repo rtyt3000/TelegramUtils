@@ -21,4 +21,3 @@ minecraft:
   auth_success: '<red>〔Авторизация〕</red> <green>✅ Успешная авторизация! Приятной игры</green>'
   auth_chat_blocked: '<red>〔Авторизация〕</red> <red>Вы не можете писать в чат до авторизации</red>'
   auth_denied_kick: '<red>❌ Вход отклонен! Ваш IP был заблокирован.</red>'
-  ip_blocked_kick: '<red>❌ Ваш IP был заблокирован через телеграм бот.</red>'
