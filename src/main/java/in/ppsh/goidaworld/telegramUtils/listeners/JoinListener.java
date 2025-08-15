@@ -2,19 +2,13 @@ package in.ppsh.goidaworld.telegramUtils.listeners;
 
 import in.ppsh.goidaworld.telegramUtils.AuthManager;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.Objects;
 import java.util.logging.Logger;
 
-public class JoinListener implements org.bukkit.event.Listener {
-    private final Logger logger;
-    private final AuthManager authManager;
-
-    public JoinListener(AuthManager authManager, Logger logger) {
-        this.logger = logger;
-        this.authManager = authManager;
-    }
+public record JoinListener(AuthManager authManager, Logger logger) implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {

@@ -12,8 +12,11 @@ import java.util.UUID;
 
 public class DatabaseManager {
     private final ConnectionSource connection;
+    @SuppressWarnings("FieldCanBeLocal")
     private final Dao<AuthUser, UUID> authDao;
     private final Dao<Login, Long> loginDao;
+    public final UserService userService;
+    public final LoginService loginService;
 
     public DatabaseManager(File pluginFolder) throws SQLException {
         File dbFile = new File(pluginFolder, "auth.db");
@@ -25,28 +28,13 @@ public class DatabaseManager {
 
         this.authDao = DaoManager.createDao(connection, AuthUser.class);
         this.loginDao = DaoManager.createDao(connection, Login.class);
+        this.userService = new UserService(authDao);
+        this.loginService = new LoginService(loginDao);
+
     }
 
-    public Dao<AuthUser, UUID> getAuthDao() {
-        return authDao;
-    }
     public Dao<Login, Long> getLoginDao() {
         return loginDao;
-    }
-
-    public AuthUser getAuthUser(UUID uuid) {
-        try {
-            return authDao.queryForId(uuid);
-        } catch (SQLException e) {
-            return null;
-        }
-    }
-    public void saveAuthUser(AuthUser user) {
-        try {
-            authDao.createOrUpdate(user);
-        } catch (SQLException e) {
-            return;
-        }
     }
 
     public void close() {

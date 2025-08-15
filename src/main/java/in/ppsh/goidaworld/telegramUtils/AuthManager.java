@@ -6,119 +6,92 @@ import in.ppsh.goidaworld.telegramUtils.database.LogInStatus;
 import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
+import net.kyori.adventure.text.TextReplacementConfig;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 
 public class AuthManager {
 
     private final DatabaseManager databaseManager;
-    private BotManager botManager;
-    private final Logger logger;
-    private final Set<UUID> frozenPlayers = new HashSet<>();
+    private final BotManager botManager;
     private final ConfigManager langConfig;
+    private final FreezeManager freezeManager;
 
 
-    public AuthManager(DatabaseManager databaseManager, File workingDir, Logger logger) {
+    public AuthManager(DatabaseManager databaseManager, FreezeManager freezeManager, BotManager botManager, File workingDir, Logger logger) {
         this.databaseManager = databaseManager;
-        this.logger = logger;
+        this.freezeManager = freezeManager;
+        this.botManager = botManager;
+
         langConfig = new ConfigManager("lang.yml", workingDir, logger);
 
     }
 
-    public void setBotManager(BotManager botManager) {
-        this.botManager = botManager;
-    }
-
-    public void auth(Player player, String ip) throws SQLException {
+    public void auth(Player player, String ip) {
         if (!isAuthorized(player)) {
             registerPlayer(player, ip);
             return;
         }
 
-        AuthUser user = databaseManager.getAuthDao().queryForId(player.getUniqueId());
+        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
 
-        Login login = new Login(ip, user);
-        databaseManager.getLoginDao().create(login);
+        Login login = databaseManager.loginService.createLogin(ip, user);
 
         if (user.getTelegramId() == 0) {
-            freezePlayer(player.getUniqueId());
+            freezeManager.freezePlayer(player.getUniqueId());
             sendRegisterInstructions(player, login.getId());
             return;
         }
 
-        if (hasBannedLogin(ip, user)) {
+        if (databaseManager.loginService.hasBannedLogin(ip, user)) {
             login.setStatus(LogInStatus.BANNED);
-            databaseManager.getLoginDao().update(login);
-            player.kick(MiniMessage.miniMessage().deserialize(langConfig.getConfig().getString("minecraft.auth_denied_kick", "You are banned from using this server.")));
+            databaseManager.loginService.updateLogin(login);
+            player.kick(langConfig.getMiniMessage("minecraft.auth_denied_kick", "You are banned from using this server."));
             return;
         }
 
-        if (!hasAcceptedLogin(ip, user)) {
-            freezePlayer(player.getUniqueId());
+        if (!databaseManager.loginService.hasAcceptedLogin(ip, user)) {
+            freezeManager.freezePlayer(player.getUniqueId());
             sendLoginRequest(user, player, ip, login.getId());
             return;
         }
 
         login.setStatus(LogInStatus.ACCEPTED);
-        databaseManager.getLoginDao().update(login);
+        databaseManager.loginService.updateLogin(login);
         botManager.sendBanAsk(login.getId());
     }
 
-    public boolean hasAcceptedLogin(String ip, AuthUser user) throws SQLException {
-        return databaseManager.getLoginDao().queryBuilder()
-                .where().eq("ip", ip).and().eq("uuid", user.getUuid())
-                .and().eq("status", LogInStatus.ACCEPTED).countOf() > 0;
-    }
 
-    public boolean hasBannedLogin(String ip, AuthUser user) throws SQLException {
-        return databaseManager.getLoginDao().queryBuilder()
-                .where().eq("ip", ip).and().eq("uuid", user.getUuid())
-                .and().eq("status", LogInStatus.BANNED).countOf() > 0;
-    }
 
-    public boolean isAuthorized(Player player) throws SQLException {
-        AuthUser user = databaseManager.getAuthDao().queryForId(player.getUniqueId());
+    public boolean isAuthorized(Player player) {
+        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
         return user != null;
     }
 
-    public void registerPlayer(Player player, String ip) throws SQLException {
-        freezePlayer(player.getUniqueId());
-        AuthUser user = new AuthUser(player.getUniqueId());
-        databaseManager.getAuthDao().create(user);
-        Login login = new Login(ip, user);
-        databaseManager.getLoginDao().create(login);
+    public void registerPlayer(Player player, String ip) {
+        freezeManager.freezePlayer(player.getUniqueId());
+        AuthUser user = databaseManager.userService.createUser(player.getUniqueId());
+        Login login = databaseManager.loginService.createLogin(ip, user);
         sendRegisterInstructions(player, login.getId());
 
     }
 
-    public void freezePlayer(UUID uuid) {
-        frozenPlayers.add(uuid);
-        logger.info("Player " + uuid + " has been frozen.");
-    }
 
-    public void unfreezePlayer(UUID uuid) {
-        frozenPlayers.remove(uuid);
-        logger.info("Player " + uuid + " has been unfrozen.");
-    }
-
-    public boolean isPlayerFrozen(UUID uuid) {
-        return frozenPlayers.contains(uuid);
-    }
 
     private void sendRegisterInstructions(Player player, long loginId) {
         String botUsername = botManager.username;
 
-        player.sendRichMessage(langConfig.getConfig().getString("minecraft.auth", "auth_required"));
-        player.sendRichMessage(langConfig.getConfig().getString("minecraft.auth_click", "auth_instructions")
-                .replace("{url}", "https://t.me/" + botUsername + "?start=" + loginId));
+        player.sendMessage(langConfig.getMiniMessage("minecraft.auth", "auth_required"));
+        player.sendMessage(
+                langConfig.getMiniMessage("minecraft.auth_click", "auth_instructions")
+                .replaceText(TextReplacementConfig.builder()
+                        .replacement("https://t.me/" + botUsername + "?start=" + loginId).match("{url}").build()
+                )
+        );
     }
 
     private void sendLoginRequest(AuthUser user, Player player, String ip, long loginId) {

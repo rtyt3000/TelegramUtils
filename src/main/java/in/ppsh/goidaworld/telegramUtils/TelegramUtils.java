@@ -4,6 +4,7 @@ import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
 import in.ppsh.goidaworld.telegramUtils.listeners.JoinListener;
 import in.ppsh.goidaworld.telegramUtils.listeners.PreventListener;
 import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
+import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -17,6 +18,7 @@ public final class TelegramUtils extends JavaPlugin {
     DatabaseManager databaseManager;
     BotManager botManager;
     AuthManager authManager;
+    FreezeManager freezeManager;
 
     @Override
     public void onEnable() {
@@ -25,35 +27,51 @@ public final class TelegramUtils extends JavaPlugin {
         saveDefaultConfig();
         saveResource("lang.yml", false);
 
-        Logger.getLogger("com.j256.ormlite").setLevel(Level.OFF);
+        Logger.getLogger("com.j256.ormlite").setLevel(Level.SEVERE);
 
-        databaseManager = loadDatabase();
-        authManager = new AuthManager(databaseManager, getDataFolder(), logger);
-        botManager = new BotManager(
-                getConfig().getString("bot.token"),
-                getConfig().getString("bot.username"),
-                getDataFolder(), logger, databaseManager, authManager
-        );
-        authManager.setBotManager(botManager);
-        CompletableFuture.runAsync(() -> botManager.start());
-        Bukkit.getPluginManager().registerEvents(new JoinListener(authManager, logger), this);
-        Bukkit.getPluginManager().registerEvents(new PreventListener(authManager, logger), this);
+        initializeFreezeManager();
+
+        initializeDatabase();
+        initializeBot();
+        initializeAuthManager();
+
+        registerListeners();
     }
 
     @Override
     public void onDisable() {
-        databaseManager.close();
-        botManager.stop();
+        if (databaseManager != null) { databaseManager.close(); }
+        if (botManager != null) { botManager.stop(); }
 
     }
 
-    DatabaseManager loadDatabase() {
+    private void initializeDatabase() {
         try {
-            return new DatabaseManager(getDataFolder());
+            databaseManager = new DatabaseManager(getDataFolder());
         } catch (SQLException e) {
             logger.severe("Failed to load database: " + e.getMessage());
             Bukkit.getPluginManager().disablePlugin(this);
-            return null;
         }
     }
+
+    private void initializeBot() {
+        botManager = new BotManager(
+                getConfig().getString("bot.token"),
+                getConfig().getString("bot.username"),
+                getDataFolder(), logger, databaseManager, freezeManager
+        );
+        CompletableFuture.runAsync(() -> botManager.start());
+    }
+
+    private void initializeAuthManager() {
+        authManager = new AuthManager(databaseManager, freezeManager, botManager, getDataFolder(), logger);
+    }
+
+    private void registerListeners() {
+        Bukkit.getPluginManager().registerEvents(new JoinListener(authManager, logger), this);
+        Bukkit.getPluginManager().registerEvents(new PreventListener(freezeManager, logger), this);
+    }
+
+    private void initializeFreezeManager() { freezeManager = new FreezeManager(logger); }
+
 }

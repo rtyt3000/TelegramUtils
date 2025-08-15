@@ -18,6 +18,7 @@ public class Login {
     private AuthUser user;
 
     @DatabaseField
+    @SuppressWarnings("unused")
     private LogInStatus status;
 
     public Login() {}
@@ -39,5 +40,9 @@ public class Login {
 
     public void setStatus(LogInStatus status) {
         this.status = status;
+    }
+
+    public String getIp() {
+        return ip;
     }
 }

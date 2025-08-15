@@ -15,16 +15,17 @@ public class AuthUser {
     @DatabaseField(unique = true)
     private long telegramId;
 
+    @SuppressWarnings("unused")
     @ForeignCollectionField
     private ForeignCollection<Login> logins;
 
+    @SuppressWarnings("unused")
     public AuthUser() { }
 
     public AuthUser(UUID uuid) {
         this.uuid = uuid;
     }
 
-    // Геттеры и сеттеры
     public UUID getUuid() {
         return uuid;
     }
@@ -35,9 +36,5 @@ public class AuthUser {
 
     public void setTelegramId(long telegramId) {
         this.telegramId = telegramId;
-    }
-
-    public ForeignCollection<Login> getSessions() {
-        return logins;
     }
 }
