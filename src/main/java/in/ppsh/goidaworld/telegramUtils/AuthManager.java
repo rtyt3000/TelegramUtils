@@ -32,12 +32,12 @@ public class AuthManager {
     }
 
     public void auth(Player player, String ip) {
-        if (!isAuthorized(player)) {
+        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
+
+        if (user == null) {
             registerPlayer(player, ip);
             return;
         }
-
-        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
 
         Login login = databaseManager.loginService.createLogin(ip, user);
 
@@ -65,12 +65,6 @@ public class AuthManager {
         botManager.sendBanAsk(login.getId());
     }
 
-
-
-    public boolean isAuthorized(Player player) {
-        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
-        return user != null;
-    }
 
     public void registerPlayer(Player player, String ip) {
         freezeManager.freezePlayer(player.getUniqueId());

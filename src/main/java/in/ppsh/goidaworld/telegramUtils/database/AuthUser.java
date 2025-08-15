@@ -22,19 +22,11 @@ public class AuthUser {
     @SuppressWarnings("unused")
     public AuthUser() { }
 
-    public AuthUser(UUID uuid) {
-        this.uuid = uuid;
-    }
+    public AuthUser(UUID uuid) { this.uuid = uuid; }
 
-    public UUID getUuid() {
-        return uuid;
-    }
+    public UUID getUuid() { return uuid; }
 
-    public long getTelegramId() {
-        return telegramId;
-    }
+    public long getTelegramId() { return telegramId; }
 
-    public void setTelegramId(long telegramId) {
-        this.telegramId = telegramId;
-    }
+    public void setTelegramId(long telegramId) { this.telegramId = telegramId; }
 }
