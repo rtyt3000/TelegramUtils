@@ -58,7 +58,7 @@ public final class TelegramUtils extends JavaPlugin {
         botManager = new BotManager(
                 getConfig().getString("bot.token"),
                 getConfig().getString("bot.username"),
-                getDataFolder(), logger, databaseManager, freezeManager
+                getDataFolder(), logger, databaseManager, freezeManager, this
         );
         CompletableFuture.runAsync(() -> botManager.start());
     }

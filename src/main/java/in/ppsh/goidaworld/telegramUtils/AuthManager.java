@@ -8,6 +8,7 @@ import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import net.kyori.adventure.text.TextReplacementConfig;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -80,12 +81,11 @@ public class AuthManager {
         String botUsername = botManager.username;
 
         player.sendMessage(langConfig.getMiniMessage("minecraft.auth", "auth_required"));
-        player.sendMessage(
-                langConfig.getMiniMessage("minecraft.auth_click", "auth_instructions")
-                .replaceText(TextReplacementConfig.builder()
-                        .replacement("https://t.me/" + botUsername + "?start=" + loginId).match("{url}").build()
-                )
-        );
+
+        String messageTemplate = langConfig.getConfig().getString("minecraft.auth_click", "auth_instructions");
+        String finalMessage = messageTemplate.replace("{url}", "https://t.me/" + botUsername + "?start=" + loginId);
+
+        player.sendMessage(MiniMessage.miniMessage().deserialize(finalMessage));
     }
 
     private void sendLoginRequest(AuthUser user, Player player, String ip, long loginId) {

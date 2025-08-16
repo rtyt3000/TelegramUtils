@@ -1,5 +1,6 @@
 package in.ppsh.goidaworld.telegramUtils.telegram;
 
+import in.ppsh.goidaworld.telegramUtils.TelegramUtils;
 import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
 import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
@@ -18,13 +19,13 @@ public class BotManager {
     private final ConfigManager langConfig;
     public final String username;
 
-    public BotManager(String token, String username, File workingDir, Logger logger, DatabaseManager databaseManager, FreezeManager freezeManager) {
+    public BotManager(String token, String username, File workingDir, Logger logger, DatabaseManager databaseManager, FreezeManager freezeManager, TelegramUtils plugin) {
         langConfig = new ConfigManager("lang.yml", workingDir, logger);
         bot = new BotClient(token);
         this.username = username;
         this.databaseManager = databaseManager;
 
-        BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig);
+        BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig, plugin);
 
         bot.onMessage(filter -> filter.regex("^/start\\s+(\\d+)$"), handlers::handleRegister);
 

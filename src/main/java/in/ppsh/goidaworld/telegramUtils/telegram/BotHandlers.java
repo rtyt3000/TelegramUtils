@@ -1,5 +1,6 @@
 package in.ppsh.goidaworld.telegramUtils.telegram;
 
+import in.ppsh.goidaworld.telegramUtils.TelegramUtils;
 import in.ppsh.goidaworld.telegramUtils.database.AuthUser;
 import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
 import in.ppsh.goidaworld.telegramUtils.database.LogInStatus;
@@ -7,16 +8,17 @@ import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import io.github.natanimn.BotContext;
+import io.github.natanimn.enums.ParseMode;
 import io.github.natanimn.types.keyboard.InlineKeyboardMarkup;
 import io.github.natanimn.types.updates.CallbackQuery;
 import io.github.natanimn.types.updates.Message;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
-import java.util.Objects;
 import java.util.logging.Logger;
 
 public record BotHandlers(Logger logger, DatabaseManager databaseManager, FreezeManager freezeManager,
-                          ConfigManager langConfig) {
+                          ConfigManager langConfig, TelegramUtils plugin) {
 
     public void handleRegister(BotContext context, Message message) {
         long loginId = Long.parseLong(message.text.split("\\s+")[1]);
@@ -66,10 +68,16 @@ public record BotHandlers(Logger logger, DatabaseManager databaseManager, Freeze
         }
 
         if (action.equals("reject")) {
-            Objects.requireNonNull(Bukkit.getPlayer(login.getUser().getUuid())).kick();
-            login.setStatus(LogInStatus.BANNED);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player player = Bukkit.getPlayer(login.getUser().getUuid());
+                if (player != null) {
+                    player.kick();
+                }
+            });            login.setStatus(LogInStatus.BANNED);
             databaseManager.loginService.updateLogin(login);
-            context.sendMessage(callback.message.chat.id, langConfig.getMessage("bot.access_denied", "Blocked").replace("{ip}", login.getIp())).exec();
+            context.sendMessage(
+                    callback.message.chat.id, langConfig.getMessage("bot.access_denied", "Blocked").replace("{ip}", login.getIp())
+            ).parseMode(ParseMode.HTML).exec();
         }
     }
 }
