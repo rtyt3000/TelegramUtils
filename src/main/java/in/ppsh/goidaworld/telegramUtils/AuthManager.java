@@ -62,7 +62,7 @@ public class AuthManager {
 
         login.setStatus(LogInStatus.ACCEPTED);
         databaseManager.loginService.updateLogin(login);
-        botManager.sendBanAsk(login.getId());
+        botManager.sendBanAsk(login);
     }
 
 

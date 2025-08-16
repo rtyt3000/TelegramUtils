@@ -13,7 +13,6 @@ public class FreezeManager {
         this.logger = logger;
     }
 
-
     public void freezePlayer(UUID uuid) {
         frozenPlayers.add(uuid);
         logger.info("Player " + uuid + " has been frozen.");

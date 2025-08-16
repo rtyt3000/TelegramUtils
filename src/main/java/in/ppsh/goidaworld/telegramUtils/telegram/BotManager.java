@@ -1,6 +1,7 @@
 package in.ppsh.goidaworld.telegramUtils.telegram;
 
 import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
+import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import io.github.natanimn.BotClient;
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 
 public class BotManager {
     private final BotClient bot;
+    private final DatabaseManager databaseManager;
     private final ConfigManager langConfig;
     public final String username;
 
@@ -20,6 +22,7 @@ public class BotManager {
         langConfig = new ConfigManager("lang.yml", workingDir, logger);
         bot = new BotClient(token);
         this.username = username;
+        this.databaseManager = databaseManager;
 
         BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig);
 
@@ -49,7 +52,18 @@ public class BotManager {
                 .exec();
     }
 
-    public void sendBanAsk(long loginId) {
-        // TODO: Implement this method to send a ban request to the user
+    public void sendBanAsk(Login login) {
+        String message = langConfig.getMessage("bot.ban_ask", "An attempt to log into your account from the confirmed IP address {ip} has been detected. You can block this IP address at any time if it is not you.")
+                .replace("{ip}", login.getIp());
+        String buttonText = langConfig.getMessage("bot.ban_button", "Ban");
+
+        InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
+        inlineMarkup.addKeyboard(new InlineKeyboardButton(buttonText, "ban:" + login.getId()));
+
+
+        bot.context.sendMessage(login.getUser().getTelegramId(), message)
+                .replyMarkup(inlineMarkup)
+                .parseMode(ParseMode.HTML)
+                .exec();
     }
 }
