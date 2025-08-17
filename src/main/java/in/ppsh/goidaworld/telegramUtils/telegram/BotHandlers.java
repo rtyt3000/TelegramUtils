@@ -25,9 +25,7 @@ public record BotHandlers(Logger logger, DatabaseManager databaseManager, Freeze
 
         Login login = databaseManager.loginService.getLogin(loginId);
 
-        if (login == null) {
-            return;
-        }
+        if (login == null) { return; }
 
         AuthUser authUser = login.getUser();
 
@@ -46,7 +44,7 @@ public record BotHandlers(Logger logger, DatabaseManager databaseManager, Freeze
         context.sendMessage(message.chat.id, langConfig.getConfig().getString("bot.success")).exec();
     }
 
-    public void handleCallback(BotContext context, CallbackQuery callback) {
+    public void handleNewIpCallback(BotContext context, CallbackQuery callback) {
         String action = callback.data.split(":")[0];
         long loginId = Long.parseLong(callback.data.split(":")[1]);
 
@@ -65,19 +63,20 @@ public record BotHandlers(Logger logger, DatabaseManager databaseManager, Freeze
             freezeManager.unfreezePlayer(login.getUser().getUuid());
             login.setStatus(LogInStatus.ACCEPTED);
             databaseManager.loginService.updateLogin(login);
-        }
-
-        if (action.equals("reject")) {
+        } else if (action.equals("reject")) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 Player player = Bukkit.getPlayer(login.getUser().getUuid());
-                if (player != null) {
-                    player.kick();
-                }
-            });            login.setStatus(LogInStatus.BANNED);
+                if (player != null) { player.kick(); }
+            });
+            login.setStatus(LogInStatus.BANNED);
             databaseManager.loginService.updateLogin(login);
             context.sendMessage(
                     callback.message.chat.id, langConfig.getMessage("bot.access_denied", "Blocked").replace("{ip}", login.getIp())
             ).parseMode(ParseMode.HTML).exec();
         }
+    }
+
+    public void handleBanCallback(BotContext context, CallbackQuery callbackQuery) {
+
     }
 }

@@ -26,4 +26,6 @@ public class FreezeManager {
     public boolean isPlayerFrozen(UUID uuid) {
         return frozenPlayers.contains(uuid);
     }
+
+    public void clear() { frozenPlayers.clear(); }
 }

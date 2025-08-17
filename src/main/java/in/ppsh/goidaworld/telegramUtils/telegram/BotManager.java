@@ -28,13 +28,18 @@ public class BotManager {
         BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig, plugin);
 
         bot.onMessage(filter -> filter.regex("^/start\\s+(\\d+)$"), handlers::handleRegister);
-
-        bot.onCallback(filter -> filter.customFilter(new CallbackQueryButtonFilter()), handlers::handleCallback );
+        bot.onCallback(filter -> filter.regex("^(accept|reject):\\d+$"), handlers::handleNewIpCallback);
+        bot.onCallback(filter -> filter.regex("^ban:\\d+$"), handlers::handleBanCallback);
     }
 
     public void start() { bot.startPolling();}
 
-    public void stop() { bot.stop(); }
+    public void stop() {
+        if (bot != null) {
+            bot.stop();
+            bot.context.deleteWebhook();
+        }
+    }
 
     public void sendRequest(long telegramId, String ip, String nickname, long loginId) {
         String message = langConfig.getMessage("bot.reauth_request", "Its you ({nickname}): {ip}?")
