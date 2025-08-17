@@ -10,10 +10,10 @@ import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,16 +58,15 @@ public final class TelegramUtils extends JavaPlugin {
         if (databaseManager != null) {
             databaseManager.close();
         }
-        if (botManager != null) {
-            botManager.stop();
-        }
-        if (freezeManager != null) {
-            freezeManager.clear();
-        }
+        // TODO: Fix bot stopping
+        // if (botManager != null) {
+        // botManager.stop();
+        // }
+        if (freezeManager != null) { freezeManager.clear(); }
 
         initializeFreezeManager();
         initializeDatabase();
-        initializeBot();
+//        initializeBot();
         initializeAuthManager();
 
         registerListeners();
@@ -75,26 +74,23 @@ public final class TelegramUtils extends JavaPlugin {
         logger.info("Plugin reloaded successfully!");
     }
 
+    @SneakyThrows
     private void initializeDatabase() {
-        try {
-            databaseManager = new DatabaseManager(getDataFolder());
-        } catch (SQLException e) {
-            logger.severe("Failed to load database: " + e.getMessage());
-            Bukkit.getPluginManager().disablePlugin(this);
-        }
+        databaseManager = new DatabaseManager(getDataFolder());
     }
 
     private void initializeBot() {
         botManager = new BotManager(
                 getConfig().getString("bot.token"),
                 getConfig().getString("bot.username"),
-                getDataFolder(), logger, databaseManager, freezeManager, this
+                getConfig().getLong("bot.group_id"),
+                getDataFolder(), logger, databaseManager.loginService, databaseManager.userService, freezeManager, this
         );
         CompletableFuture.runAsync(() -> botManager.start());
     }
 
     private void initializeAuthManager() {
-        authManager = new AuthManager(databaseManager, freezeManager, botManager, getDataFolder(), logger);
+        authManager = new AuthManager(databaseManager.loginService, databaseManager.userService, freezeManager, botManager, getDataFolder());
     }
 
     private void registerListeners() {
@@ -105,12 +101,11 @@ public final class TelegramUtils extends JavaPlugin {
     private void initializeFreezeManager() { freezeManager = new FreezeManager(logger); }
 
     private void registerCommands() {
-        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(
-                new ConfigManager("lang.yml", getDataFolder(), logger), this
-        ).createCommand().build();
+        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(new ConfigManager("lang.yml", getDataFolder()), this)
+                .createCommand()
+                .build();
 
-        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, command ->
-                command.registrar().register(tgUtilsCommand));
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, command -> command.registrar().register(tgUtilsCommand));
     }
 
 }

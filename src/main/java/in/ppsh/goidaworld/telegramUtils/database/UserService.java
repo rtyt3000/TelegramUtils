@@ -1,27 +1,24 @@
 package in.ppsh.goidaworld.telegramUtils.database;
 
 import com.j256.ormlite.dao.Dao;
+import lombok.SneakyThrows;
 
-import java.sql.SQLException;
 import java.util.UUID;
 
 public record UserService(Dao<AuthUser, UUID> dao) {
 
-    public AuthUser getUser(UUID uuid) {
-        try { return dao.queryForId(uuid); }
-        catch (SQLException e) { throw new RuntimeException(e); }
-    }
+    @SneakyThrows
+    public AuthUser getUser(UUID uuid) { return dao.queryForId(uuid); }
 
+    @SneakyThrows
     public AuthUser createUser(UUID uuid) {
         AuthUser user = new AuthUser(uuid);
-        try {
-            dao.create(user);
-            return user;
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        dao.create(user);
+        return user;
     }
 
+    @SneakyThrows
     public void updateUser(AuthUser user) {
-        try { dao.update(user); }
-        catch (SQLException e) { throw new RuntimeException(e); }
+        dao.update(user);
     }
 }

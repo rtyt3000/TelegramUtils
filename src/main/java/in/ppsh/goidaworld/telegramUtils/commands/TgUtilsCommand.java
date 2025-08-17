@@ -18,8 +18,7 @@ public record TgUtilsCommand(ConfigManager langConfig, TelegramUtils plugin) {
                             .requires(sender -> sender.getSender().isOp())
                             .executes(this::sendHelp))
                     .then(Commands.literal("reload")
-                            .requires(sender -> sender.getSender().isOp())
-                            .requires(Commands.restricted(source -> true))
+                            .requires(Commands.restricted(source -> source.getSender().isOp()))
                             .executes(this::reload)
                     );
     }
