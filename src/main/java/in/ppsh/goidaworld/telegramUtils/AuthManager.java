@@ -7,12 +7,10 @@ import in.ppsh.goidaworld.telegramUtils.database.Login;
 import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
-import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.util.logging.Logger;
 
 
 public class AuthManager {
@@ -23,12 +21,12 @@ public class AuthManager {
     private final FreezeManager freezeManager;
 
 
-    public AuthManager(DatabaseManager databaseManager, FreezeManager freezeManager, BotManager botManager, File workingDir, Logger logger) {
+    public AuthManager(DatabaseManager databaseManager, FreezeManager freezeManager, BotManager botManager, File workingDir) {
         this.databaseManager = databaseManager;
         this.freezeManager = freezeManager;
         this.botManager = botManager;
 
-        langConfig = new ConfigManager("lang.yml", workingDir, logger);
+        langConfig = new ConfigManager("lang.yml", workingDir);
 
     }
 

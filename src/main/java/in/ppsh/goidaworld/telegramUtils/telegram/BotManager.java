@@ -15,15 +15,13 @@ import java.util.logging.Logger;
 
 public class BotManager {
     private final BotClient bot;
-    private final DatabaseManager databaseManager;
     private final ConfigManager langConfig;
     public final String username;
 
     public BotManager(String token, String username, File workingDir, Logger logger, DatabaseManager databaseManager, FreezeManager freezeManager, TelegramUtils plugin) {
-        langConfig = new ConfigManager("lang.yml", workingDir, logger);
+        langConfig = new ConfigManager("lang.yml", workingDir);
         bot = new BotClient(token);
         this.username = username;
-        this.databaseManager = databaseManager;
 
         BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig, plugin);
 

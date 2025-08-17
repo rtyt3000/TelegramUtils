@@ -58,16 +58,15 @@ public final class TelegramUtils extends JavaPlugin {
         if (databaseManager != null) {
             databaseManager.close();
         }
-        if (botManager != null) {
-            botManager.stop();
-        }
-        if (freezeManager != null) {
-            freezeManager.clear();
-        }
+        // TODO: Fix bot stopping
+        // if (botManager != null) {
+        // botManager.stop();
+        // }
+        if (freezeManager != null) { freezeManager.clear(); }
 
         initializeFreezeManager();
         initializeDatabase();
-        initializeBot();
+//        initializeBot();
         initializeAuthManager();
 
         registerListeners();
@@ -90,11 +89,18 @@ public final class TelegramUtils extends JavaPlugin {
                 getConfig().getString("bot.username"),
                 getDataFolder(), logger, databaseManager, freezeManager, this
         );
-        CompletableFuture.runAsync(() -> botManager.start());
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            botManager.start();
+        });
     }
 
     private void initializeAuthManager() {
-        authManager = new AuthManager(databaseManager, freezeManager, botManager, getDataFolder(), logger);
+        authManager = new AuthManager(databaseManager, freezeManager, botManager, getDataFolder());
     }
 
     private void registerListeners() {
@@ -105,12 +111,11 @@ public final class TelegramUtils extends JavaPlugin {
     private void initializeFreezeManager() { freezeManager = new FreezeManager(logger); }
 
     private void registerCommands() {
-        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(
-                new ConfigManager("lang.yml", getDataFolder(), logger), this
-        ).createCommand().build();
+        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(new ConfigManager("lang.yml", getDataFolder()), this)
+                .createCommand()
+                .build();
 
-        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, command ->
-                command.registrar().register(tgUtilsCommand));
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, command -> command.registrar().register(tgUtilsCommand));
     }
 
 }
