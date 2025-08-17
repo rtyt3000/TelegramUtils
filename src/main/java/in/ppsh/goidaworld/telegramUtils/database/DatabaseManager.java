@@ -5,6 +5,7 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
+import lombok.SneakyThrows;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -31,9 +32,8 @@ public class DatabaseManager {
 
     }
 
+    @SneakyThrows
     public void close() {
-        try {
-            connection.close();
-        } catch (Exception ignored) {}
+        connection.close();
     }
 }

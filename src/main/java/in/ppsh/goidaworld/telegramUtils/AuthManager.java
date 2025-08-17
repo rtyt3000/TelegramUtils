@@ -1,9 +1,6 @@
 package in.ppsh.goidaworld.telegramUtils;
 
-import in.ppsh.goidaworld.telegramUtils.database.AuthUser;
-import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
-import in.ppsh.goidaworld.telegramUtils.database.LogInStatus;
-import in.ppsh.goidaworld.telegramUtils.database.Login;
+import in.ppsh.goidaworld.telegramUtils.database.*;
 import in.ppsh.goidaworld.telegramUtils.telegram.BotManager;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
@@ -15,30 +12,32 @@ import java.io.File;
 
 public class AuthManager {
 
-    private final DatabaseManager databaseManager;
+    private final LoginService loginService;
+    private final UserService userService;
     private final BotManager botManager;
     private final ConfigManager langConfig;
     private final FreezeManager freezeManager;
 
 
-    public AuthManager(DatabaseManager databaseManager, FreezeManager freezeManager, BotManager botManager, File workingDir) {
-        this.databaseManager = databaseManager;
-        this.freezeManager = freezeManager;
+    public AuthManager(LoginService loginService, UserService userService, FreezeManager freezeManager, BotManager botManager, File workingDir) {
+        this.loginService = loginService;
+        this.userService = userService;
         this.botManager = botManager;
+        this.freezeManager = freezeManager;
 
         langConfig = new ConfigManager("lang.yml", workingDir);
 
     }
 
     public void auth(Player player, String ip) {
-        AuthUser user = databaseManager.userService.getUser(player.getUniqueId());
+        AuthUser user = userService.getUser(player.getUniqueId());
 
         if (user == null) {
             registerPlayer(player, ip);
             return;
         }
 
-        Login login = databaseManager.loginService.createLogin(ip, user);
+        Login login = loginService.createLogin(ip, user);
 
         if (user.getTelegramId() == 0) {
             freezeManager.freezePlayer(player.getUniqueId());
@@ -46,29 +45,29 @@ public class AuthManager {
             return;
         }
 
-        if (databaseManager.loginService.hasBannedLogin(ip, user)) {
+        if (loginService.hasBannedLogin(ip, user)) {
             login.setStatus(LogInStatus.BANNED);
-            databaseManager.loginService.updateLogin(login);
+            loginService.updateLogin(login);
             player.kick(langConfig.getMiniMessage("minecraft.auth_denied_kick", "You are banned from using this server."));
             return;
         }
 
-        if (!databaseManager.loginService.hasAcceptedLogin(ip, user)) {
+        if (!loginService.hasAcceptedLogin(ip, user)) {
             freezeManager.freezePlayer(player.getUniqueId());
             sendLoginRequest(user, player, ip, login.getId());
             return;
         }
 
         login.setStatus(LogInStatus.ACCEPTED);
-        databaseManager.loginService.updateLogin(login);
+        loginService.updateLogin(login);
         botManager.sendBanAsk(login);
     }
 
 
     public void registerPlayer(Player player, String ip) {
         freezeManager.freezePlayer(player.getUniqueId());
-        AuthUser user = databaseManager.userService.createUser(player.getUniqueId());
-        Login login = databaseManager.loginService.createLogin(ip, user);
+        AuthUser user = userService.createUser(player.getUniqueId());
+        Login login = loginService.createLogin(ip, user);
         sendRegisterInstructions(player, login.getId());
 
     }

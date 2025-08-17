@@ -1,8 +1,9 @@
 package in.ppsh.goidaworld.telegramUtils.telegram;
 
 import in.ppsh.goidaworld.telegramUtils.TelegramUtils;
-import in.ppsh.goidaworld.telegramUtils.database.DatabaseManager;
 import in.ppsh.goidaworld.telegramUtils.database.Login;
+import in.ppsh.goidaworld.telegramUtils.database.LoginService;
+import in.ppsh.goidaworld.telegramUtils.database.UserService;
 import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import io.github.natanimn.BotClient;
@@ -18,16 +19,17 @@ public class BotManager {
     private final ConfigManager langConfig;
     public final String username;
 
-    public BotManager(String token, String username, File workingDir, Logger logger, DatabaseManager databaseManager, FreezeManager freezeManager, TelegramUtils plugin) {
+    public BotManager(String token, String username, Long chatId, File workingDir, Logger logger, LoginService loginService, UserService userService, FreezeManager freezeManager, TelegramUtils plugin) {
         langConfig = new ConfigManager("lang.yml", workingDir);
         bot = new BotClient(token);
         this.username = username;
 
-        BotHandlers handlers = new BotHandlers(logger, databaseManager, freezeManager, langConfig, plugin);
+        BotHandlers handlers = new BotHandlers(logger, loginService, userService, freezeManager, langConfig, plugin);
 
         bot.onMessage(filter -> filter.regex("^/start\\s+(\\d+)$"), handlers::handleRegister);
         bot.onCallback(filter -> filter.regex("^(accept|reject):\\d+$"), handlers::handleNewIpCallback);
         bot.onCallback(filter -> filter.regex("^ban:\\d+$"), handlers::handleBanCallback);
+        bot.onMessage(filter -> filter.commands("list") && filter.chatIds(chatId), handlers::handleListCommand);
     }
 
     public void start() { bot.startPolling();}

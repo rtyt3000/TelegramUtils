@@ -10,10 +10,10 @@ import in.ppsh.goidaworld.telegramUtils.utils.ConfigManager;
 import in.ppsh.goidaworld.telegramUtils.utils.FreezeManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,33 +74,23 @@ public final class TelegramUtils extends JavaPlugin {
         logger.info("Plugin reloaded successfully!");
     }
 
+    @SneakyThrows
     private void initializeDatabase() {
-        try {
-            databaseManager = new DatabaseManager(getDataFolder());
-        } catch (SQLException e) {
-            logger.severe("Failed to load database: " + e.getMessage());
-            Bukkit.getPluginManager().disablePlugin(this);
-        }
+        databaseManager = new DatabaseManager(getDataFolder());
     }
 
     private void initializeBot() {
         botManager = new BotManager(
                 getConfig().getString("bot.token"),
                 getConfig().getString("bot.username"),
-                getDataFolder(), logger, databaseManager, freezeManager, this
+                getConfig().getLong("bot.group_id"),
+                getDataFolder(), logger, databaseManager.loginService, databaseManager.userService, freezeManager, this
         );
-        CompletableFuture.runAsync(() -> {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            botManager.start();
-        });
+        CompletableFuture.runAsync(() -> botManager.start());
     }
 
     private void initializeAuthManager() {
-        authManager = new AuthManager(databaseManager, freezeManager, botManager, getDataFolder());
+        authManager = new AuthManager(databaseManager.loginService, databaseManager.userService, freezeManager, botManager, getDataFolder());
     }
 
     private void registerListeners() {
