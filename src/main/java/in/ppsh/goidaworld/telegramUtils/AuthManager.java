@@ -25,7 +25,7 @@ public class AuthManager {
         this.botManager = botManager;
         this.freezeManager = freezeManager;
 
-        langConfig = new ConfigManager("lang.yml", workingDir);
+        langConfig = ConfigManager.getLangConfig(workingDir);
 
     }
 
