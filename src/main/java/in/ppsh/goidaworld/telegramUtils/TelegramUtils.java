@@ -24,6 +24,7 @@ public final class TelegramUtils extends JavaPlugin {
     BotManager botManager;
     AuthManager authManager;
     FreezeManager freezeManager;
+    private ConfigManager mainConfig;
 
     @Override
     public void onEnable() {
@@ -31,6 +32,9 @@ public final class TelegramUtils extends JavaPlugin {
 
         saveDefaultConfig();
         saveResource("lang.yml", false);
+        
+        // Initialize enhanced config manager for main config
+        mainConfig = ConfigManager.getMainConfig(getDataFolder());
 
         Logger.getLogger("com.j256.ormlite").setLevel(Level.SEVERE);
 
@@ -54,6 +58,10 @@ public final class TelegramUtils extends JavaPlugin {
 
     public void reload() {
         saveDefaultConfig();
+        
+        // Clear cached config instances for fresh reload
+        ConfigManager.clearAllInstances();
+        mainConfig = ConfigManager.getMainConfig(getDataFolder());
 
         if (databaseManager != null) {
             databaseManager.close();
@@ -81,9 +89,9 @@ public final class TelegramUtils extends JavaPlugin {
 
     private void initializeBot() {
         botManager = new BotManager(
-                getConfig().getString("bot.token"),
-                getConfig().getString("bot.username"),
-                getConfig().getLong("bot.group_id"),
+                mainConfig.getString("bot.token"),
+                mainConfig.getString("bot.username"),
+                mainConfig.getLong("bot.group_id"),
                 getDataFolder(), logger, databaseManager.loginService, databaseManager.userService, freezeManager, this
         );
         CompletableFuture.runAsync(() -> botManager.start());
@@ -101,7 +109,7 @@ public final class TelegramUtils extends JavaPlugin {
     private void initializeFreezeManager() { freezeManager = new FreezeManager(logger); }
 
     private void registerCommands() {
-        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(new ConfigManager("lang.yml", getDataFolder()), this)
+        LiteralCommandNode<CommandSourceStack> tgUtilsCommand = new TgUtilsCommand(ConfigManager.getLangConfig(getDataFolder()), this)
                 .createCommand()
                 .build();
 

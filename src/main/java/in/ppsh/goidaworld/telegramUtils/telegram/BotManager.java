@@ -20,7 +20,7 @@ public class BotManager {
     public final String username;
 
     public BotManager(String token, String username, Long chatId, File workingDir, Logger logger, LoginService loginService, UserService userService, FreezeManager freezeManager, TelegramUtils plugin) {
-        langConfig = new ConfigManager("lang.yml", workingDir);
+        langConfig = ConfigManager.getLangConfig(workingDir);
         bot = new BotClient(token);
         this.username = username;
 
@@ -42,9 +42,11 @@ public class BotManager {
     }
 
     public void sendRequest(long telegramId, String ip, String nickname, long loginId) {
-        String message = langConfig.getMessage("bot.reauth_request", "Its you ({nickname}): {ip}?")
+        String message = langConfig.message("bot.reauth_request")
+                .withDefault("Its you ({nickname}): {ip}?")
                 .replace("{ip}", ip)
-                .replace("{nickname}", nickname);
+                .replace("{nickname}", nickname)
+                .asString();
 
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
 
@@ -59,8 +61,10 @@ public class BotManager {
     }
 
     public void sendBanAsk(Login login) {
-        String message = langConfig.getMessage("bot.ban_ask", "An attempt to log into your account from the confirmed IP address {ip} has been detected. You can block this IP address at any time if it is not you.")
-                .replace("{ip}", login.getIp());
+        String message = langConfig.message("bot.ban_ask")
+                .withDefault("An attempt to log into your account from the confirmed IP address {ip} has been detected. You can block this IP address at any time if it is not you.")
+                .replace("{ip}", login.getIp())
+                .asString();
         String buttonText = langConfig.getMessage("bot.ban_button", "Ban");
 
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
