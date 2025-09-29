@@ -12,12 +12,7 @@ public record JoinListener(AuthManager authManager, Logger logger) implements Li
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        try {
-            String ip = Objects.requireNonNull(event.getPlayer().getAddress()).getAddress().getHostAddress();
-            authManager.auth(event.getPlayer(), ip);
-        } catch (Exception e) {
-            logger.warning("Failed to get player ip address");
-            logger.warning(e.getMessage());
-        }
+        String ip = Objects.requireNonNull(event.getPlayer().getAddress()).getAddress().getHostAddress();
+        authManager.auth(event.getPlayer(), ip);
     }
 }
